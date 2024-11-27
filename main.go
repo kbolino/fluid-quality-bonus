@@ -2,9 +2,10 @@ package main
 
 import (
 	"archive/zip"
-	"embed"
 	"encoding/json"
+	"flag"
 	"fmt"
+	"image/png"
 	"io"
 	"io/fs"
 	"os"
@@ -12,10 +13,13 @@ import (
 	"strings"
 )
 
-//go:embed src
-var srcFS embed.FS
+var (
+	flagGameDir     = flag.String("gameDir", `C:\Steam\steamapps\common\Factorio`, "path to the folder containing game files")
+	flagNoThumbnail = flag.Bool("noThumbnail", false, "don't generate thumbnail image")
+)
 
 func main() {
+	flag.Parse()
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, "FATAL:", err)
 		os.Exit(1)
@@ -52,6 +56,20 @@ func run() (err error) {
 	if err != nil {
 		return fmt.Errorf("writing info.json bytes: %w", err)
 	}
+	if !*flagNoThumbnail {
+		thumbnailImage, err := generateThumbnail(*flagGameDir)
+		if err != nil {
+			return fmt.Errorf("generating thumbnail image: %w", err)
+		}
+		thumbnailWriter, err := zipWriter.Create(path.Join(modBase, "thumbnail.png"))
+		if err != nil {
+			return fmt.Errorf("creating thumbnail.png: %w", err)
+		}
+		if err := png.Encode(thumbnailWriter, thumbnailImage); err != nil {
+			return fmt.Errorf("encoding thumbnail as PNG: %w", err)
+		}
+	}
+	srcFS := os.DirFS(".")
 	fs.WalkDir(srcFS, "src", func(p string, d fs.DirEntry, _ error) error {
 		if d.IsDir() {
 			return nil
