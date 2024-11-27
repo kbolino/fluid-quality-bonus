@@ -72,5 +72,6 @@ func run() (err error) {
 		}
 		return nil
 	})
+	fmt.Println("wrote module to", outPath)
 	return nil
 }
