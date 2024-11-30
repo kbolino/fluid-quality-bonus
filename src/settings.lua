@@ -5,6 +5,6 @@ data:extend({
     default_value = 20,
     minimum_value = 0,
     maximum_value = 500,
-    setting_type = "runtime-global"
+    setting_type = "startup"
   }
 })
