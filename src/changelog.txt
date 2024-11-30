@@ -1,0 +1,15 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.0.3
+Date: 2024-11-30
+  Minor changes:
+    - Added changelog
+---------------------------------------------------------------------------------------------------
+Version: 0.0.2
+Date: 2024-11-30
+  Features:
+    - Bonus percent now configurable as a setting, defaults to 20%
+---------------------------------------------------------------------------------------------------
+Version: 0.0.1
+Date: 2024-11-29
+  Features:
+    - Initial release, all fluid recipes yield 20% more fluid per quality level of ingredients
