@@ -1,12 +1,25 @@
+-- memoize recipes with fluid products
+
 function fluid_products_for_recipe(recipe)
   local fluid_products = {}
-  for i, product in ipairs(recipe.products) do
-    if product.type == 'fluid' and product.amount then
+  for _, product in ipairs(recipe.products) do
+    if product.type == "fluid" and product.amount then
       fluid_products[#fluid_products + 1] = product
     end
   end
   return fluid_products
 end
+
+local recipes_with_fluid_products = {}
+
+for recipe_name, recipe in pairs(prototypes.recipe) do
+  local fluid_products = fluid_products_for_recipe(recipe)
+  if fluid_products then
+    recipes_with_fluid_products[recipe_name] = fluid_products
+  end
+end
+
+-- set up and register on_tick event handler
 
 function calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_products, bonus_per_quality_level)
   local bonuses = 0
@@ -34,8 +47,8 @@ end
 function on_tick_assembling_machine(machine, bonus_per_quality_level)
   local recipe, quality = machine.get_recipe()
   if recipe and quality then
-    local fluid_products = fluid_products_for_recipe(recipe)
-    if #fluid_products > 0 then
+    local fluid_products = recipes_with_fluid_products[recipe.name]
+    if fluid_products then
       calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_products, bonus_per_quality_level)
       return {
         r = recipe,
@@ -50,7 +63,7 @@ end
 
 function on_tick_surface(surface, entities_out, bonus_per_quality_level)
   local assembling_machines = surface.find_entities_filtered{
-    type = 'assembling-machine'
+    type = "assembling-machine"
   }
   for _, machine in ipairs(assembling_machines) do
     local entity = on_tick_assembling_machine(machine, bonus_per_quality_level)
@@ -61,7 +74,7 @@ function on_tick_surface(surface, entities_out, bonus_per_quality_level)
 end
 
 script.on_event(defines.events.on_tick,
-  function (event)
+  function(event)
     bonus_per_quality_level = settings.global["fluid-quality-bonus-percent"].value / 100
     if not storage.prev_entities then
       storage.prev_entities = {}
