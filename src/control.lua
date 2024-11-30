@@ -1,6 +1,3 @@
--- TODO: export as setting
-bonus_per_quality_level = 0.2
-
 function fluid_products_for_recipe(recipe)
   local fluid_products = {}
   for i, product in ipairs(recipe.products) do
@@ -11,7 +8,7 @@ function fluid_products_for_recipe(recipe)
   return fluid_products
 end
 
-function calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_products)
+function calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_products, bonus_per_quality_level)
   local bonuses = 0
   local prev = storage.prev_entities[machine.unit_number]
   if prev and prev.r == recipe and prev.q == quality then
@@ -34,12 +31,12 @@ function calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_produ
   end
 end
 
-function on_tick_assembling_machine(machine)
+function on_tick_assembling_machine(machine, bonus_per_quality_level)
   local recipe, quality = machine.get_recipe()
   if recipe and quality then
     local fluid_products = fluid_products_for_recipe(recipe)
     if #fluid_products > 0 then
-      calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_products)
+      calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_products, bonus_per_quality_level)
       return {
         r = recipe,
         q = quality,
@@ -51,12 +48,12 @@ function on_tick_assembling_machine(machine)
   return nil
 end
 
-function on_tick_surface(surface, entities_out)
+function on_tick_surface(surface, entities_out, bonus_per_quality_level)
   local assembling_machines = surface.find_entities_filtered{
     type = 'assembling-machine'
   }
   for _, machine in ipairs(assembling_machines) do
-    local entity = on_tick_assembling_machine(machine)
+    local entity = on_tick_assembling_machine(machine, bonus_per_quality_level)
     if entity then
       entities_out[machine.unit_number] = entity
     end
@@ -65,12 +62,13 @@ end
 
 script.on_event(defines.events.on_tick,
   function (event)
+    bonus_per_quality_level = settings.global["fluid-quality-bonus-percent"].value / 100
     if not storage.prev_entities then
       storage.prev_entities = {}
     end
     local cur_entities = {}
     for _, surface in pairs(game.surfaces) do
-      on_tick_surface(surface, cur_entities)
+      on_tick_surface(surface, cur_entities, bonus_per_quality_level)
     end
     storage.prev_entities = cur_entities
   end

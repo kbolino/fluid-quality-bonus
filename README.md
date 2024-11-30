@@ -20,7 +20,12 @@ adding logistical complexity.
 
 ## Building
 
-`go run .` will produce a ZIP file, place this in the game's `mods` folder.
+The mod is built using a [Go](https://go.dev) program, so you need to first
+[install Go](https://go.dev/dl/).
+
+Once installed, `go run .` will produce a ZIP file directly, and
+`go run . - install` will do the same and also place it in the game's `mods`
+folder.
 
 ## Performance
 
@@ -28,7 +33,3 @@ This mod tries not to do more than necessary, but will likely reduce UPS
 for larger factories, because the only event it can listen for is `on_tick`,
 and it has to save crafting state for all relevant machines in order to detect
 when a crafting cycle completes.
-
-# TODO
-
-- Allow bonus amount to be changed through settings
