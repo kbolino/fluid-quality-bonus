@@ -3,6 +3,7 @@ Version: 0.0.4
 Date: 2024-11-30
   Optimizations:
     - Memoized recipes with fluid products, reducing time spent in on_tick
+    - Removed call to surface.find_entities_filtered, greatly reducing time spent in on_tick
 ---------------------------------------------------------------------------------------------------
 Version: 0.0.3
 Date: 2024-11-30
