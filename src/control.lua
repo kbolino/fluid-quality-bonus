@@ -27,6 +27,11 @@ function on_tick_assembling_machine(machine, bonus_per_quality_level)
       if fluid_products then
         local new_recipe_name = shared.generated_recipe_name(recipe, quality)
         machine.set_recipe(new_recipe_name, quality)
+      else
+        local control_behavior = machine.get_control_behavior()
+        if control_behavior and control_behavior.circuit_set_recipe then
+          -- TODO: ensure quality matches recipe
+        end
       end
     end
   end
