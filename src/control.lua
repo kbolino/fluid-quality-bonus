@@ -22,10 +22,12 @@ end
 function on_tick_assembling_machine(machine, bonus_per_quality_level)
   local recipe, quality = machine.get_recipe()
   if recipe and quality then
-    local fluid_products = recipes_with_fluid_products[recipe.name]
-    if fluid_products then
-      local new_recipe_name = shared.generated_recipe_name(recipe, quality)
-      machine.set_recipe(new_recipe_name, quality)
+    if recipe.enabled then
+      local fluid_products = recipes_with_fluid_products[recipe.name]
+      if fluid_products then
+        local new_recipe_name = shared.generated_recipe_name(recipe, quality)
+        machine.set_recipe(new_recipe_name, quality)
+      end
     end
   end
 end
