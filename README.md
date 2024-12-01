@@ -27,9 +27,8 @@ Once installed, `go run .` will produce a ZIP file directly, and
 `go run . - install` will do the same and also place it in the game's `mods`
 folder.
 
-## Performance
+# To Do
 
-This mod tries not to do more than necessary, but will likely reduce UPS
-for larger factories, because the only event it can listen for is `on_tick`,
-and it has to save crafting state for all relevant machines in order to detect
-when a crafting cycle completes.
+- Support "set recipe" from circuit network
+    - Need to use `AssemblingMachineControlBehavior` and undocumented field
+      `quality` of `Signal` type
