@@ -19,23 +19,23 @@ for recipe_name, recipe in pairs(prototypes.recipe) do
   end
 end
 
--- set up and register on_tick event handler
+-- set up and register event handlers
 
 function calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_products, bonus_per_quality_level)
   local bonuses = 0
-  local prev = storage.prev_entities[machine.unit_number]
-  if prev and prev.r == recipe and prev.q == quality then
-    if machine.crafting_progress < prev.c then
+  local entity = machine.e
+  if machine.r == recipe and machine.q == quality then
+    if entity.crafting_progress < machine.c then
       bonuses = bonuses + 1
     end
-    if machine.bonus_progress < prev.b then
+    if entity.bonus_progress < machine.b then
       bonuses = bonuses + 1
     end
     bonuses = bonuses * quality.level
     if bonuses > 0 then
       for _, product in ipairs(fluid_products) do
         local amount_to_insert = bonus_per_quality_level * bonuses * product.amount
-        machine.insert_fluid{
+        entity.insert_fluid{
           name   = product.name,
           amount = amount_to_insert
         }
@@ -45,44 +45,66 @@ function calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_produ
 end
 
 function on_tick_assembling_machine(machine, bonus_per_quality_level)
-  local recipe, quality = machine.get_recipe()
+  local entity = machine.e
+  local recipe, quality = entity.get_recipe()
   if recipe and quality then
     local fluid_products = recipes_with_fluid_products[recipe.name]
     if fluid_products then
       calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_products, bonus_per_quality_level)
-      return {
-        r = recipe,
-        q = quality,
-        c = machine.crafting_progress,
-        b = machine.bonus_progress
-      }
+      update_assembling_machine(entity)
     end
   end
   return nil
 end
 
-function on_tick_surface(surface, entities_out, bonus_per_quality_level)
-  local assembling_machines = surface.find_entities_filtered{
-    type = "assembling-machine"
+function update_assembling_machine(entity)
+  local recipe, quality = entity.get_recipe()
+  storage.assembling_machines[entity.unit_number] = {
+    e = entity,
+    r = recipe,
+    q = quality,
+    c = entity.crafting_progress,
+    b = entity.bonus_progress
   }
-  for _, machine in ipairs(assembling_machines) do
-    local entity = on_tick_assembling_machine(machine, bonus_per_quality_level)
-    if entity then
-      entities_out[machine.unit_number] = entity
-    end
-  end
 end
+
+function on_built_event(event)
+  update_assembling_machine(event.entity)
+end
+
+function on_mined_event(event)
+  storage.assembling_machines[event.entity.unit_number] = nil
+end
+
+local event_filters = {{filter = "type", type = "assembling-machine"}}
+script.on_event(defines.events.on_built_entity, on_built_event, event_filters)
+script.on_event(defines.events.on_robot_built_entity, on_built_event, event_filters)
+script.on_event(defines.events.on_space_platform_built_entity, on_built_event, event_filters)
+script.on_event(defines.events.on_entity_died, on_mined_event, event_filters)
+script.on_event(defines.events.on_player_mined_entity, on_mined_event, event_filters)
+script.on_event(defines.events.on_robot_mined_entity, on_mined_event, event_filters)
+script.on_event(defines.events.on_space_platform_mined_entity, on_mined_event, event_filters)
 
 script.on_event(defines.events.on_tick,
   function(event)
     bonus_per_quality_level = settings.global["fluid-quality-bonus-percent"].value / 100
-    if not storage.prev_entities then
-      storage.prev_entities = {}
+    if storage.assembling_machines then
+      for _, machine in pairs(storage.assembling_machines) do
+        on_tick_assembling_machine(machine, bonus_per_quality_level)
+      end
     end
-    local cur_entities = {}
+  end
+)
+
+script.on_configuration_changed(
+  function(data)
+    log("on_configuration_changed")
+    storage.assembling_machines = {}
     for _, surface in pairs(game.surfaces) do
-      on_tick_surface(surface, cur_entities, bonus_per_quality_level)
+      local entities = surface.find_entities_filtered{type = "assembling-machine"}
+      for _, entity in ipairs(entities) do
+        update_assembling_machine(entity)
+      end
     end
-    storage.prev_entities = cur_entities
   end
 )
