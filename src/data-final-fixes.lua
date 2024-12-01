@@ -14,7 +14,11 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
       for quality_name, quality in pairs(data.raw["quality"]) do
         local new_recipe = shared.shallow_copy(recipe)
         local new_products = {}
+        local main_product_name = nil
         for i, product in ipairs(recipe.results) do
+          if i == 1 or product.name == main_product then
+            main_product_name = string.format("%s-name.%s", product.type, product.name)
+          end
           if product.type == "fluid" and product.amount then
             local new_product = shared.shallow_copy(product)
             local bonus_amount = product.amount * bonus_per_quality_level * quality.level
@@ -27,20 +31,13 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
         end
         local recipe_lname = recipe.localised_name
         if not recipe_lname then
-          recipe_lname = {string.format("recipe-name.%s", recipe_name)}
-          if recipe.main_product then
-            -- TODO: main product could be an item instead of a fluid
-            -- TODO: main_product can be empty instead of nil if there's only one product
-            recipe_lname = {"?", recipe_lname, {string.format("fluid-name.%s", recipe.main_product)}}
+            recipe_lname = {string.format("recipe-name.%s", recipe_name)}
+          if main_product_name then
+            recipe_lname = {"?", recipe_lname, {main_product_name}}
           end
         end
-        new_recipe.localised_name = {
-          "",
-          recipe_lname,
-          " (",
-          {string.format("quality-name.%s", quality_name)},
-          ")"
-        }
+        local quality_lname = {string.format("quality-name.%s", quality_name)}
+        new_recipe.localised_name = {"", recipe_lname, " (", quality_lname, ")"}
         new_recipe.enabled = true
         new_recipe.hidden = true
         new_recipe.results = new_products
