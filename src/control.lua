@@ -1,5 +1,5 @@
 ---@alias _AssemblingMachine {e: LuaEntity, r: LuaRecipe, q: LuaQualityPrototype, c: number, b: number}
----@alias _EntityEvent {name: string, entity: LuaEntity}
+---@alias _EntityEvent {name: string, entity: LuaEntity} | {name: string, source: LuaEntity, destination: LuaEntity}
 
 -----------------------------------------
 -- Memoize recipes with fluid products --
@@ -48,24 +48,34 @@ end
 
 ---Called on any event that creates an assembling machine.
 ---@param event _EntityEvent
-function on_built_event(event)
-  update_assembling_machine(event.entity)
+function on_entity_created(event)
+  local entity = event.entity
+  if not entity then
+    entity = event.destination
+  end
+  update_assembling_machine(entity)
 end
 
 ---Called on any event that destroys an assembling machine.
 ---@param event _EntityEvent
-function on_mined_event(event)
+function on_entity_destroyed(event)
   storage.assembling_machines[event.entity.unit_number] = nil
 end
 
 local event_filters = { { filter = "type", type = "assembling-machine" } }
-script.on_event(defines.events.on_built_entity, on_built_event, event_filters)
-script.on_event(defines.events.on_robot_built_entity, on_built_event, event_filters)
-script.on_event(defines.events.on_space_platform_built_entity, on_built_event, event_filters)
-script.on_event(defines.events.on_entity_died, on_mined_event, event_filters)
-script.on_event(defines.events.on_player_mined_entity, on_mined_event, event_filters)
-script.on_event(defines.events.on_robot_mined_entity, on_mined_event, event_filters)
-script.on_event(defines.events.on_space_platform_mined_entity, on_mined_event, event_filters)
+
+script.on_event(defines.events.on_built_entity, on_entity_created, event_filters)
+script.on_event(defines.events.on_entity_cloned, on_entity_created, event_filters)
+script.on_event(defines.events.on_robot_built_entity, on_entity_created, event_filters)
+script.on_event(defines.events.on_space_platform_built_entity, on_entity_created, event_filters)
+script.on_event(defines.events.script_raised_built, on_entity_created, event_filters)
+script.on_event(defines.events.script_raised_revive, on_entity_created, event_filters)
+
+script.on_event(defines.events.on_entity_died, on_entity_destroyed, event_filters)
+script.on_event(defines.events.on_player_mined_entity, on_entity_destroyed, event_filters)
+script.on_event(defines.events.on_robot_mined_entity, on_entity_destroyed, event_filters)
+script.on_event(defines.events.on_space_platform_mined_entity, on_entity_destroyed, event_filters)
+script.on_event(defines.events.script_raised_destroy, on_entity_destroyed, event_filters)
 
 script.on_configuration_changed(
   function(_)
