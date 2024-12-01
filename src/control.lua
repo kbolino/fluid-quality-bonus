@@ -14,7 +14,7 @@ local recipes_with_fluid_products = {}
 
 for recipe_name, recipe in pairs(prototypes.recipe) do
   local fluid_products = fluid_products_for_recipe(recipe)
-  if fluid_products then
+  if #fluid_products > 0 then
     recipes_with_fluid_products[recipe_name] = fluid_products
   end
 end
