@@ -77,19 +77,26 @@ script.on_event(defines.events.on_robot_mined_entity, on_entity_destroyed, event
 script.on_event(defines.events.on_space_platform_mined_entity, on_entity_destroyed, event_filters)
 script.on_event(defines.events.script_raised_destroy, on_entity_destroyed, event_filters)
 
-script.on_configuration_changed(
-  function(_)
-    log("on_configuration_changed")
-    ---@type table<number, _AssemblingMachine>
+script.on_init(function(_)
+  log("on_init")
+  ---@type table<number, _AssemblingMachine>
+  storage.assembling_machines = {}
+end)
+
+script.on_configuration_changed(function(_)
+  log("on_configuration_changed")
+  if not storage.assembling_machines then
     storage.assembling_machines = {}
-    for _, surface in pairs(game.surfaces) do
-      local entities = surface.find_entities_filtered { type = "assembling-machine" }
-      for _, entity in ipairs(entities) do
+  end
+  for _, surface in pairs(game.surfaces) do
+    local entities = surface.find_entities_filtered { type = "assembling-machine" }
+    for _, entity in ipairs(entities) do
+      if not storage.assembling_machines[entity.unit_number] then
         update_assembling_machine(entity)
       end
     end
   end
-)
+end)
 
 --------------------------------------------------------------
 -- Produce bonus fluids on the tick that crafting completes --

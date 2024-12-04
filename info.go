@@ -11,7 +11,7 @@ type Info struct {
 
 var thisInfo = Info{
 	Name:            "fluid-quality-bonus",
-	Version:         "0.0.6",
+	Version:         "0.0.7",
 	Title:           "Fluid Quality Bonus",
 	Author:          "DeathJunkie88",
 	FactorioVersion: "2.0",
