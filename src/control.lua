@@ -134,6 +134,9 @@ end
 ---@param bonus_per_quality_level number
 function on_tick_assembling_machine(machine, bonus_per_quality_level)
   local entity = machine.e
+  if not entity.valid then
+    return false
+  end
   local recipe, quality = entity.get_recipe()
   if recipe and quality then
     local fluid_products = recipes_with_fluid_products[recipe.name]
@@ -142,15 +145,18 @@ function on_tick_assembling_machine(machine, bonus_per_quality_level)
       update_assembling_machine(entity)
     end
   end
-  return nil
+  return true
 end
 
 script.on_event(defines.events.on_tick,
   function(_)
     bonus_per_quality_level = settings.global["fluid-quality-bonus-percent"].value / 100
     if storage.assembling_machines then
-      for _, machine in pairs(storage.assembling_machines) do
-        on_tick_assembling_machine(machine, bonus_per_quality_level)
+      for id, machine in pairs(storage.assembling_machines) do
+        local entity_valid = on_tick_assembling_machine(machine, bonus_per_quality_level)
+        if not entity_valid then
+          storage.assembling_machines[id] = nil
+        end
       end
     end
   end
