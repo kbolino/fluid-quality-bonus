@@ -1,4 +1,4 @@
----@alias _AssemblingMachine {e: LuaEntity, r: LuaRecipe, q: LuaQualityPrototype, c: number, b: number}
+---@alias _AssemblingMachine {e: LuaEntity, r: LuaRecipe, q: LuaQualityPrototype, f: number}
 ---@alias _EntityEvent {name: string, entity: LuaEntity} | {name: string, source: LuaEntity, destination: LuaEntity}
 
 -----------------------------------------
@@ -41,8 +41,7 @@ function update_assembling_machine(entity)
     e = entity,
     r = recipe,
     q = quality,
-    c = entity.crafting_progress,
-    b = entity.bonus_progress
+    f = entity.products_finished,
   }
 end
 
@@ -77,21 +76,17 @@ script.on_event(defines.events.on_robot_mined_entity, on_entity_destroyed, event
 script.on_event(defines.events.on_space_platform_mined_entity, on_entity_destroyed, event_filters)
 script.on_event(defines.events.script_raised_destroy, on_entity_destroyed, event_filters)
 
-script.on_init(function(_)
-  log("on_init")
-  ---@type table<number, _AssemblingMachine>
-  storage.assembling_machines = {}
-end)
-
 script.on_configuration_changed(function(_)
   log("on_configuration_changed")
   if not storage.assembling_machines then
+    ---@type table<number, _AssemblingMachine>
     storage.assembling_machines = {}
   end
   for _, surface in pairs(game.surfaces) do
     local entities = surface.find_entities_filtered { type = "assembling-machine" }
     for _, entity in ipairs(entities) do
-      if not storage.assembling_machines[entity.unit_number] then
+      machine = storage.assembling_machines[entity.unit_number]
+      if machine == nil or machine.f == nil then
         update_assembling_machine(entity)
       end
     end
@@ -110,23 +105,20 @@ end)
 function calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_products, bonus_per_quality_level)
   local bonuses = 0
   local entity = machine.e
-  if machine.r == recipe and machine.q == quality then
-    if entity.crafting_progress < machine.c then
-      bonuses = bonuses + 1
-    end
-    if entity.bonus_progress < machine.b then
-      bonuses = bonuses + 1
-    end
-    bonuses = bonuses * quality.level
-    if bonuses > 0 then
-      for _, product in ipairs(fluid_products) do
-        local amount_to_insert = bonus_per_quality_level * bonuses * product.amount
-        entity.insert_fluid {
-          name   = product.name,
-          amount = amount_to_insert
-        }
-      end
-    end
+  if machine.r ~= recipe or
+      machine.q ~= quality or
+      quality.level == 0 or
+      entity.products_finished <= machine.f
+  then
+    return
+  end
+  bonuses = (entity.products_finished - machine.f) * quality.level
+  for _, product in ipairs(fluid_products) do
+    local amount_to_insert = bonus_per_quality_level * bonuses * product.amount
+    entity.insert_fluid {
+      name   = product.name,
+      amount = amount_to_insert
+    }
   end
 end
 
@@ -150,9 +142,10 @@ end
 
 script.on_event(defines.events.on_tick,
   function(_)
-    bonus_per_quality_level = settings.global["fluid-quality-bonus-percent"].value / 100
-    if storage.assembling_machines then
-      for id, machine in pairs(storage.assembling_machines) do
+    local bonus_per_quality_level = settings.global["fluid-quality-bonus-percent"].value * 0.01
+    local tick_modulus = settings.global["fluid-quality-bonus-tick-modulus"].value + 0
+    for id, machine in pairs(storage.assembling_machines) do
+      if id % tick_modulus == 0 then
         local entity_valid = on_tick_assembling_machine(machine, bonus_per_quality_level)
         if not entity_valid then
           storage.assembling_machines[id] = nil

@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.0.9
+Date: 2025-06-24
+  Optimizations:
+    - Added tick-modulus setting, which allows machines to be checked less often than every tick
+    - Made possible by reading products_finished instead of crafting_progress and bonus_progress
+---------------------------------------------------------------------------------------------------
 Version: 0.0.8
 Date: 2024-12-17
   Bugfixes:
