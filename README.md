@@ -9,7 +9,7 @@ For example, making holmium solution with rare stone and rare holmium ore
 will yield 200 fluid output instead of just 100.
 
 Solid products are not affected, so while making molten iron from legendary
-calcite will yield 500 fluid instead of 250, it won't produce any more stone.
+calcite will yield 875 fluid instead of 250, it won't produce any more stone.
 
 This mod exists because of a perceived deficiency in the quality system
 as of game version 2.0.55, where solid ingredients of higher quality
