@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.0.11
+Date: 2025-06-25
+  Optimizations:
+    - Don't store previous recipe and quality (always rewards bonus to current recipe/quality)
+---------------------------------------------------------------------------------------------------
 Version: 0.0.10
 Date: 2025-06-24
   Bugfixes:

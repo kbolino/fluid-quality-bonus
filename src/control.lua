@@ -1,4 +1,11 @@
----@alias _AssemblingMachine {e: LuaEntity, r: LuaRecipe, q: LuaQualityPrototype, f: number}
+---Locally tracked state of an assembling machine. Keys:
+---* e is the entity
+---* f is the number of products finished as of the last bonus
+---* r was the recipe as of ..
+---* q was the quality as of ..
+---* p was the crafting_progress as of ..
+---* b was the bonus_progress as of ..
+---@alias _AssemblingMachine {e: LuaEntity, f: number}
 ---@alias _EntityEvent {name: string, entity: LuaEntity} | {name: string, source: LuaEntity, destination: LuaEntity}
 
 -----------------------------------------
@@ -36,11 +43,8 @@ end
 ---Updates the tracked parameters of an assembling machine.
 ---@param entity LuaEntity
 function update_assembling_machine(entity)
-  local recipe, quality = entity.get_recipe()
   storage.assembling_machines[entity.unit_number] = {
     e = entity,
-    r = recipe,
-    q = quality,
     f = entity.products_finished,
   }
 end
@@ -93,64 +97,48 @@ script.on_configuration_changed(function(_)
   end
 end)
 
---------------------------------------------------------------
--- Produce bonus fluids on the tick that crafting completes --
---------------------------------------------------------------
+-----------------------------------------------------------
+-- Produce bonus fluids based on newly finished products --
+-----------------------------------------------------------
 
 ---@param machine _AssemblingMachine
----@param recipe LuaRecipe
----@param quality LuaQualityPrototype
----@param fluid_products FluidProduct[]
 ---@param bonus_per_quality_level number
-function calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_products, bonus_per_quality_level)
-  local bonuses = 0
+function calculate_and_insert_bonus_fluids(machine, bonus_per_quality_level)
   local entity = machine.e
-  if machine.r ~= recipe or
-      machine.q ~= quality or
+  local recipe, quality = entity.get_recipe()
+  if recipe == nil or
+      quality == nil or
       quality.level == 0 or
       entity.products_finished <= machine.f
   then
     return
   end
-  bonuses = (entity.products_finished - machine.f) * quality.level
+  local fluid_products = recipes_with_fluid_products[recipe.name]
+  if fluid_products == nil then
+    return
+  end
+  local new_products = entity.products_finished - machine.f
+  local bonus_multiplier = bonus_per_quality_level * new_products * quality.level
   for _, product in ipairs(fluid_products) do
-    local amount_to_insert = bonus_per_quality_level * bonuses * product.amount
     entity.insert_fluid {
       name   = product.name,
-      amount = amount_to_insert
+      amount = bonus_multiplier * product.amount / 100
     }
   end
 end
 
----@param machine _AssemblingMachine
----@param bonus_per_quality_level number
-function on_tick_assembling_machine(machine, bonus_per_quality_level)
-  local entity = machine.e
-  if not entity.valid then
-    return false
-  end
-  local recipe, quality = entity.get_recipe()
-  if recipe and quality then
-    local fluid_products = recipes_with_fluid_products[recipe.name]
-    if fluid_products then
-      calculate_and_insert_bonus_fluids(machine, recipe, quality, fluid_products, bonus_per_quality_level)
-      update_assembling_machine(entity)
-    end
-  end
-  return true
-end
-
 script.on_event(defines.events.on_tick,
   function(event)
-    local bonus_per_quality_level = settings.global["fluid-quality-bonus-percent"].value * 0.01
+    local bonus_per_quality_level = settings.global["fluid-quality-bonus-percent"].value + 0
     local tick_modulus = settings.global["fluid-quality-bonus-tick-modulus"].value + 0
     local tick = event.tick % tick_modulus
     for id, machine in pairs(storage.assembling_machines) do
-      if id % tick_modulus == tick then
-        local entity_valid = on_tick_assembling_machine(machine, bonus_per_quality_level)
-        if not entity_valid then
-          storage.assembling_machines[id] = nil
-        end
+      local entity = machine.e
+      if not entity.valid then
+        storage.assembling_machines[id] = nil
+      elseif id % tick_modulus == tick then
+        calculate_and_insert_bonus_fluids(machine, bonus_per_quality_level)
+        update_assembling_machine(entity)
       end
     end
   end
