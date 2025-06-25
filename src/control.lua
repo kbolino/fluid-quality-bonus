@@ -141,11 +141,12 @@ function on_tick_assembling_machine(machine, bonus_per_quality_level)
 end
 
 script.on_event(defines.events.on_tick,
-  function(_)
+  function(event)
     local bonus_per_quality_level = settings.global["fluid-quality-bonus-percent"].value * 0.01
     local tick_modulus = settings.global["fluid-quality-bonus-tick-modulus"].value + 0
+    local tick = event.tick % tick_modulus
     for id, machine in pairs(storage.assembling_machines) do
-      if id % tick_modulus == 0 then
+      if id % tick_modulus == tick then
         local entity_valid = on_tick_assembling_machine(machine, bonus_per_quality_level)
         if not entity_valid then
           storage.assembling_machines[id] = nil
