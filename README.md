@@ -23,9 +23,7 @@ adding logistical complexity.
 The mod is built using a [Go](https://go.dev) program, so you need to first
 [install Go](https://go.dev/dl/).
 
-Once installed, `go run .` will produce a ZIP file directly, and
-`go run . -install` will do the same and also place it in the game's `mods`
-folder. Use `go run . -help` to print other options.
+See `build.ps1` for an example command to build the mod.
 
 ## Performance
 

@@ -1,0 +1,10 @@
+{
+  "name": "fluid-quality-bonus",
+  "version": "0.0.11",
+  "title": "Fluid Quality Bonus",
+  "author": "DeathJunkie88",
+  "factorio_version": "2.0",
+  "dependencies": [
+    "quality"
+  ]
+}
