@@ -17,6 +17,9 @@
 ---@return FluidProduct[]
 function fluid_products_for_recipe(recipe)
   local fluid_products = {}
+  if string.find(recipe.name, "^empty-.*-barrel$") then
+    return {}
+  end
   for _, product in ipairs(recipe.products) do
     if product.type == "fluid" and product.amount then
       fluid_products[#fluid_products + 1] = product
